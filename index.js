@@ -91,7 +91,13 @@ app.get('/health', (req, res) => {
 
 app.get('/certs', async (req, res) => {
   const ingressRes = await cache.read();
-  res.json(await getCertificateExpiry(ingressRes));
+  const certs = await getCertificateExpiry(ingressRes);
+
+  if (req.query.text !== undefined)
+  {
+    return res.send(certs.map(ele => `${ele.host} ${ele.days}`).join('\n'))
+  }
+  res.json(certs);
 });
 
 app.get('/certs/:days', async (req, res) => {
@@ -105,6 +111,11 @@ app.get('/certs/:days', async (req, res) => {
 
     const ingressRes = await cache.read();
     const certs = await getCertificateExpiry(ingressRes);
+
+    if (req.query.text !== undefined)
+    {
+      return res.send(certs.filter(host => host.days < days).map(ele => `${ele.host} ${ele.days}`).join('\n'))
+    }
     res.json(certs.filter(host => host.days < days));
   } catch (err) {
     console.error(err);
